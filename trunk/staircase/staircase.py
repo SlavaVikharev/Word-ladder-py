@@ -91,17 +91,16 @@ def write_result(chain):
     """
     if not chain:
         print("There is no way to build the chain")
+        return None
     print("\nHere is a result:")
     for word in chain:
         print(word)
     print("Count: %i" % len(chain))
+    return None
 
 
-def main():
-    if len(sys.argv) == 1:
-        print("Введите staircase.py --help, чтобы увидеть справку")
-        quit()
-    if sys.argv[1] == "--help":
+def check_input():
+    if len(sys.argv) > 1 and sys.argv[1] == "--help":
         print("""
     Staircase
     ---------
@@ -112,6 +111,13 @@ def main():
     также является словом.
             """)
         quit()
+    if len(sys.argv) != 4:
+        print("Введите staircase.py --help, чтобы увидеть справку")
+        quit()
+
+
+def main():
+    check_input()
     dictionary = read_dictionary(sys.argv[3])
     start = sys.argv[1].strip()
     end = sys.argv[2].strip()
