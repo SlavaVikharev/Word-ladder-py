@@ -22,7 +22,7 @@ def read_dictionary(dictionaryPath):
 
 def find_similar(word, end, dictionary, visited, links):
     """
-    Принимает слово, конечное слово,
+    Принимает слово, конечное слово для остановки,
     словарь, посещенные слова, зависимости слов
     Возвращает множество слов, отличающееся от слова на 1 позицию
     Возвращает конечное слово, если оно было найдено в похожих
@@ -73,13 +73,10 @@ def build_chain(last, links):
     Принимает последнее слово в цепи и dict зависимостей слово
     Возвращает лист из слов, составленных из зависимостей
     """
-    chainList = []
-    while True:
+    chainList = [last]
+    while last in links:
+        last = links[last]
         chainList.append(last)
-        try:
-            last = links[last]
-        except:
-            break
     return chainList[::-1]
 
 
