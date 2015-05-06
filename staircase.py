@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import sys
 
+REGISTER = True
 
-def read_dictionary(dictionaryPath):
+
+def read_dictionary(dictionary_path):
     """
-    Считывает файл из 'dictionaryPath'
+    Считывает файл из 'dictionary_path'
     Возвращает dict с ключами - длины слов,
     лежащих под этим ключом
     """
     dictionary = {}
-    for word in open(dictionaryPath):
-        word = word[:-1]
+    try:
+        file = open(dictionary_path, encoding="utf-8")
+    except FileNotFoundError:
+        print("There is no this file")
+        sys.exit(1)
+    for word in file:
+        word = word.strip()
+        if not REGISTER:
+            word = word.lower()
         if len(word) in dictionary:
             dictionary[len(word)].append(word)
         else:
             dictionary[len(word)] = [word]
+    file.close()
     return dictionary
 
 
@@ -88,19 +97,25 @@ def write_result(chain):
     """
     if not chain:
         print("There is no way to build the chain")
-        return None
+        return
     print("\nHere is a result:")
     for word in chain:
         print(word)
     print("Count: %i" % len(chain))
-    return None
 
 
 def check_input():
-    if len(sys.argv) > 1 and sys.argv[1] == "--help":
+    if "--register" in sys.argv:
+        REGISTER = False
+    if "--help" in sys.argv:
         print("""
     Staircase
     ---------
+
+    python3 staircase.py [first] [last] [dictionary file]
+
+    --register - Регистронезависимость
+    --help     - Эта страница
 
     Вход (аргументы): исходное слово, целевое слово и словарь.
     Выход: цепочка однобуквенных преобразований, позволяющая получить
@@ -108,8 +123,11 @@ def check_input():
     также является словом.
             """)
         quit()
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4:
         print("Введите staircase.py --help, чтобы увидеть справку")
+        quit()
+    if len(sys.argv[1]) != len(sys.argv[2]):
+        print("Длины слов должны быть равными")
         quit()
 
 
@@ -118,6 +136,9 @@ def main():
     dictionary = read_dictionary(sys.argv[3])
     start = sys.argv[1].strip()
     end = sys.argv[2].strip()
+    if not REGISTER:
+        start = start.lower()
+        end = end.lower()
     dictionary = dictionary[len(start)]
     chainResult = find_chain(start, end, dictionary)
     write_result(chainResult)
