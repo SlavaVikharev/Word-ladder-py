@@ -2,149 +2,244 @@
 
 import sys
 
-REGISTER = True
+__all__ = ["StaircaseTools"]
 
 
-class Staircase:
-    def __init__(self):
-        dictionary = self.read_dictionary(sys.argv[3])
-        start = sys.argv[1].strip()
-        end = sys.argv[2].strip()
-        if not REGISTER:
-            start = start.lower()
-            end = end.lower()
-        dictionary = dictionary[len(start)]
-        chainResult = self.find_chain(start, end, dictionary)
+class StaircaseTools:
 
-    def read_dictionary(self, dictionary_path):
+    @classmethod
+    def read_dictionary(cls, dictionary_path, regins=True):
         """
-        Считывает файл из 'dictionary_path'
-        Возвращает dict с ключами - длины слов,
-        лежащих под этим ключом
+        Принимает
+        путь до словаря, флаг регистронезависимости
+
+        Возвращает
+        dict: value - set слов одинаковой длины
+              key   - длина слов в set по этому ключу
         """
-        dictionary = {}
         try:
-            file = open(dictionary_path, encoding="utf-8")
-        except IOError:
-            print("There is no this file")
+            dictionary = {}
+            with open(dictionary_path) as file:
+                for word in file:
+                    word = word.strip()
+                    if regins:
+                        word = word.lower()
+                    if len(word) in dictionary:
+                        dictionary[len(word)].add(word)
+                    else:
+                        dictionary[len(word)] = set([word])
+            return dictionary
+        except IOError as e:
+            print(e)
             sys.exit(1)
-        for word in file:
-            word = word.strip()
-            if not REGISTER:
-                word = word.lower()
-            if len(word) in dictionary:
-                dictionary[len(word)].append(word)
-            else:
-                dictionary[len(word)] = [word]
-        file.close()
-        return dictionary
 
-    def find_similar(self, word, end, dictionary, visited, links):
+    @classmethod
+    def correct_input(cls, start, end, dictionary):
         """
-        Принимает слово, конечное слово для остановки,
-        словарь, посещенные слова, зависимости слов
-        Возвращает множество слов, отличающееся от слова на 1 позицию
-        Возвращает конечное слово, если оно было найдено в похожих
-        """
-        visited.add(word)
-        similar = set()
-        for suspect in dictionary:
-            if suspect in visited:
-                continue
-            fail = False
-            for i in range(len(word)):
-                if word[i] != suspect[i]:
-                    if fail:
-                        break
-                    fail = True
-            else:
-                links[suspect] = word
-                if suspect == end:
-                    return suspect
-                visited.add(suspect)
-                similar.add(suspect)
-        return similar
+        Принимает
+        начальное слово, конечное слово, словарь
 
-    def find_chain(self, start, end, dictionary):
+        Возвращает
+        bool, зависящий от корректности слов
         """
-        Принимает начальное слово, конечное слово, словарь
-        Возвращает цепь из похожих друг на друга слов
-        Возвращает None, если таких слов не найдено
-        """
-        if start == end:
-            return [start]
+        correct = True
         if len(start) != len(end):
-            return None
-        visited = set()
-        queue = [start]
-        links = {}
-        for current in queue:
-            similar = self.find_similar(current, end,
-                                        dictionary, visited, links)
-            if similar == end:
-                return self.build_chain(end, links)
-            queue += similar
-        return None
+            if __name__ == '__main__':
+                print('Слова должны быть одной длины')
+            correct = False
+        if start not in dictionary:
+            if __name__ == '__main__':
+                print('Начального слова нет в словаре')
+            correct = False
+        if end not in dictionary:
+            if __name__ == '__main__':
+                print('Конечного слова нет в словаре')
+            correct = False
+        return correct
 
-    def build_chain(self, last, links):
+    @classmethod
+    def is_similar(cls, word, another):
         """
-        Принимает последнее слово в цепи и dict зависимостей слово
-        Возвращает лист из слов, составленных из зависимостей
-        """
-        chain_list = [last]
-        while last in links:
-            last = links[last]
-            chain_list.append(last)
-        return chain_list[::-1]
+        Принимает
+        два слова
 
-    def write_result(self, chain):
+        Возвращает
+        bool, отличаются ли слова на 1 букву
         """
-        Принимает лист слов
-        Если лист пуст, выводит, что нельзя построить цепь
-        Иначе выводит слова на экран
+        fail = False
+        for i in range(len(word)):
+            if word[i] != another[i]:
+                if fail:
+                    return False
+                fail = True
+        return fail
+
+    @classmethod
+    def generate_all_chains(cls, word, end, dictionary, max_dep, trace):
         """
-        if not chain:
-            print("There is no way to build the chain")
+        Рекурсивная функция - генератор
+
+        Принимает
+        текущее слово, конечное слово, словарь,
+        максимальную глубину поиска, путь
+
+        Возвращает
+        lists - цепи похожих слов, длиной не более max_dep,
+        если первое слово цепи start, последнее - end
+        """
+        trace.append(word)
+        if word == end:
+            yield trace
             return
-        print("\nHere is a result:")
-        for word in chain:
-            print(word)
-        print("Count: %i" % len(chain))
+        if len(trace) >= max_dep:
+            return
+        for suspect in dictionary.difference(trace):
+            if not cls.is_similar(word, suspect):
+                continue
+            for chain in cls.generate_all_chains(suspect, end, dictionary,
+                                                 max_dep, list(trace)):
+                yield chain
+
+    @classmethod
+    def find_all_chains(cls, start, end, dictionary, max_dep):
+        """
+        Принимает
+        начальное слово, конечное слово,
+        словарь, максимальную глубину поиска
+
+        Возвращает
+        list цепей похожих слов, длиной не более max_dep,
+        если первое слово цепи start, последнее - end
+        если цепей не существует, возвращает пустой list
+        """
+        if not cls.correct_input(start, end, dictionary):
+            return []
+        return list(cls.generate_all_chains(start, end, dictionary,
+                                            max_dep, []))
+
+    @classmethod
+    def find_shortest_chain(cls, start, end, dictionary):
+        """
+        Принимает
+        начальное слово, конечное слово, словарь
+
+        Возвращает
+        list - кратчайшую цепь похожих слов,
+        с первым словом start, последним - end
+        если цепи не существует, возвращает пустой list
+        """
+        if not cls.correct_input(start, end, dictionary):
+            return []
+        queue = [start]
+        links = {start: None}
+        for current in queue:
+            for suspect in dictionary.difference(links):
+                if cls.is_similar(current, suspect):
+                    links[suspect] = current
+                    if suspect == end:
+                        return cls.build_chain(end, links)
+                    queue.append(suspect)
+
+    @classmethod
+    def build_chain(cls, word, links):
+        """
+        Принимает
+        слово, с которого начинать построение цепи,
+        зависимости слов
+
+        Возвращает
+        list - цепь, составленная
+        от введенного слова, до начала
+        в обратном порядке
+        """
+        chain = [word]
+        while links[word] is not None:
+            word = links[word]
+            chain.append(word)
+        return chain[::-1]
+
+    @classmethod
+    def print_chains(cls, chains, depth):
+        """
+        Принимает
+        list цепей
+
+        Выполняет
+        вызов print_chain для каждой цепи
+        если цепей нет, сообщает об этом
+        """
+        if len(chains) == 0:
+            print("Не удалось построить ни одну цепь длиной до %i слов" % depth)
+            return
+        [cls.print_chain(chain) for chain in chains]
+        print('Количество цепей: %i\n' % len(chains))
+
+    @classmethod
+    def print_chain(cls, chain):
+        """
+        Принимает
+        цепь
+
+        Выполняет
+        вывод на экран слов цепи и длину цепи
+        если цепи нет, сообщает об этом
+        """
+        if len(chain) == 0:
+            print("Не удалось построить цепь")
+            return
+        [print(word) for word in chain]
+        print('Количество слов: %i\n' % len(chain))
 
 
-def check_input(self):
-    if "--register" in sys.argv:
-        REGISTER = False
-    if "--help" in sys.argv:
-        print("""
+def check_input():
+
+    if '--help' in sys.argv:
+        print('''
     Staircase
     ---------
 
-    python3 staircase.py [first] [last] [dictionary file]
+    staircase.py first last dict_path [options...]
 
-    --register - Регистронезависимость
-    --help     - Эта страница
+    Options:
+        --all          - Поиск всех цепей
+        --regins       - Регистронезависимость
+        --depth <int>  - Максимальная глубина поиска при ключе --all
+        --help         - Эта страница
 
     Вход (аргументы): исходное слово, целевое слово и словарь.
     Выход: цепочка однобуквенных преобразований, позволяющая получить
     из исходного слова целевое, при этом каждый промежуточный шаг
     также является словом.
-            """)
+''')
         quit()
     if len(sys.argv) < 4:
-        print("Введите staircase.py --help, чтобы увидеть справку")
-        quit()
-    if len(sys.argv[1]) != len(sys.argv[2]):
-        print("Длины слов должны быть равными")
+        print('Введите staircase.py --help, чтобы увидеть справку')
         quit()
 
 
 def main():
+
     check_input()
-    staircase = Staircase()
-    write_result(staircase.chainResult)
-    quit()
+
+    start, end, dict_path = sys.argv[1:4]
+    regins = '--regins' in sys.argv
+    all_chains = '--all' in sys.argv
+    max_dep = int(sys.argv[sys.argv.index('--depth') + 1]) \
+        if '--depth' in sys.argv else 5
+
+    if regins:
+        start = start.lower()
+        end = end.lower()
+
+    dictionary = StaircaseTools.read_dictionary(dict_path, regins)[len(start)]
+
+    if all_chains:
+        chains = StaircaseTools.find_all_chains(start, end, dictionary, max_dep)
+        StaircaseTools.print_chains(chains, max_dep)
+    else:
+        chain = StaircaseTools.find_shortest_chain(start, end, dictionary)
+        StaircaseTools.print_chain(chain)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
