@@ -30,8 +30,7 @@ class StaircaseTools:
                         dictionary[len(word)] = set([word])
             return dictionary
         except IOError as e:
-            print(e)
-            sys.exit(1)
+            raise e
 
     @classmethod
     def correct_input(cls, start, end, dictionary):
@@ -44,16 +43,10 @@ class StaircaseTools:
         """
         correct = True
         if len(start) != len(end):
-            if __name__ == '__main__':
-                print('Слова должны быть одной длины')
             correct = False
         if start not in dictionary:
-            if __name__ == '__main__':
-                print('Начального слова нет в словаре')
             correct = False
         if end not in dictionary:
-            if __name__ == '__main__':
-                print('Конечного слова нет в словаре')
             correct = False
         return correct
 
@@ -171,7 +164,8 @@ class StaircaseTools:
         if len(chains) == 0:
             print("Не удалось построить ни одну цепь длиной до %i слов" % depth)
             return
-        [cls.print_chain(chain) for chain in chains]
+        for chain in chains:
+            cls.print_chain(chain)
         print('Количество цепей: %i\n' % len(chains))
 
     @classmethod
@@ -187,7 +181,8 @@ class StaircaseTools:
         if len(chain) == 0:
             print("Не удалось построить цепь")
             return
-        [print(word) for word in chain]
+        for word in chain:
+            print(word)
         print('Количество слов: %i\n' % len(chain))
 
 
@@ -231,7 +226,13 @@ def main():
         start = start.lower()
         end = end.lower()
 
-    dictionary = StaircaseTools.read_dictionary(dict_path, regins)[len(start)]
+    try:
+        dictionary = StaircaseTools.read_dictionary(dict_path, regins)
+    except IOError as e:
+        print(e)
+        sys.exit(1)
+
+    dictionary = dictionary[len(start)]
 
     if all_chains:
         chains = StaircaseTools.find_all_chains(start, end, dictionary, max_dep)
