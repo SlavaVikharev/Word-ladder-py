@@ -1,15 +1,15 @@
-Staircase.py
+Ladder.py
 ============
 
 What is it?
 -----------
-Staircase.py - приложение для создания цепочки слов, такой,</br>
+Ladder.py - приложение для создания цепочки слов, такой,</br>
 что каждое слово отличается от соседей ровно на одну букву.
 
 How to run?
 -----------
 ```bash
-staircase.py муха слон runouns.txt
+ladder.py муха слон runouns.txt
 муха
 мура
 кура
