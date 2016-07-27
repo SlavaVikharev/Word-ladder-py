@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from staircase import StaircaseTools as STools
+from ladder import StaircaseTools as STools
 
 DICTIONARY = STools.read_dictionary("runouns.txt")
 
